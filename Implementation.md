@@ -69,12 +69,12 @@ The basic _RUBE II_ resolution algorithm, therefore, is something like...
 - for each square in grid
   - conflict = no
   - if square+(direction*pushed) is filled
-   - check old state of square
-   - resolve conflict = (yes/no)
+    - check old state of square
+    - resolve conflict = (yes/no)
   - if conflict = no
-   - square+(direction*pushed) = square
-   - point square to square+(direction*pushed)
-   - square.pushed = square.motivation
+    - square+(direction*pushed) = square
+    - point square to square+(direction*pushed)
+    - square.pushed = square.motivation
 
 That works, but precedence rules might be better suited...
 
@@ -82,15 +82,15 @@ That works, but precedence rules might be better suited...
 - for each square in grid, ordered by precedence
   - point sq to newgrid.square+(direction*pushed)
   - if sq is empty
-   - sq = grid.square
+    - sq = grid.square
   - else if newgrid.square is empty
-   - point sq to newgrid.square
-   - sq = grid.square
+    - point sq to newgrid.square
+    - sq = grid.square
   - else
-   - point sq to newgrid.square
-   - square.pushed = sq.motivation
-   - square.direction = sq.direction
-   - choose square on newgrid again
+    - point sq to newgrid.square
+    - square.pushed = sq.motivation
+    - square.direction = sq.direction
+    - choose square on newgrid again
   - sq.pushed = sq.motivation;
 
 Precedence Rules are:
