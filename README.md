@@ -6,7 +6,7 @@ Das Klickenklacker is the reference interpreter for the RUBE II automaton-like p
 Introduction
 ------------
 
-RUBE II, like its predecessor, is an automaton-like system, where a set of objects are governed by the predetermined laws of "physics."  Once constructed, the RUBE II program executes forever in time units known as _frames_, and so there is no "current-" or "next instruction," in the traditional programming sense.
+_RUBE II:  Das Klickenklacker_, like its predecessor _Rube_, is an automaton-like system, where a set of objects are governed by the predetermined laws of "physics."  Once constructed, the RUBE II program executes forever in time units known as _frames_, and so there is no "current-" or "next instruction," in the traditional programming sense.
 
 Frames are not unlike frames in a movie, where each is a step in the action.  Each frame is created from the last through the following a simple process of determining the next location for objects, resolving impending collisions between objects, and committing the resolved movements.
 
