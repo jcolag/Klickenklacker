@@ -434,6 +434,9 @@ void showGrid(struct thing **warehouse, int x, int y) {
 
     /* Run through the grid, printing each character */
     for (j=1;j<=y;j++) {
+        if (!ansi) {
+            printf("\n");
+        }
         for (i=1;i<=x;i++) {
             printf("%c", warehouse[i][j].display);
         }
