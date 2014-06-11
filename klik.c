@@ -4,7 +4,7 @@
  * RUBE II Interpreter code by John Colagioia, with some ideas
  * borrowed from the original RUBE interpreter, also by Pressey;
  * released on 28 August 2000.
- *
+ * 
  * See impl.txt for various implementation notes.
  */
 
@@ -17,40 +17,40 @@
 #include <conio.h>
 #include <mem.h>
 #include <dos.h>
-#endif                           /* __MSDOS__ */
+#endif                                  /* __MSDOS__ */
 
 /* Directional Constants */
-#define LEFT    (1)
-#define UP  (2)
-#define RIGHT   (3)
-#define DOWN    (4)
-#define STOP    (0)
+#define LEFT   (1)
+#define UP     (2)
+#define RIGHT  (3)
+#define DOWN   (4)
+#define STOP   (0)
 
 /* Object Type Constants */
-#define STA (0)
-#define MOT (1)
-#define MOV (2)
+#define STA    (0)
+#define MOT    (1)
+#define MOV    (2)
 
 /* The force, lowercase 'f' */
-#define GRAV    (1)
+#define GRAV   (1)
 
 /* Objects in the warehouse */
 struct  thing {
-    char   display;              /* The image displayed */
-    int    type;                 /* The kind of object */
-    int    pushed;               /* How fast it must move */
-    int    motivation;           /* How fast it naturally moves */
-    int    direction;            /* Current direction of motion */
-    int    freefall;             /* Does gravity apply? */
-    int    checked;              /* Administrative, to move only once */
+    char   display;                     /* The image displayed */
+    int    type;                        /* The kind of object */
+    int    pushed;                      /* How fast it must move */
+    int    motivation;                  /* How fast it naturally moves */
+    int    direction;                   /* Current direction of motion */
+    int    freefall;                    /* Does gravity apply? */
+    int    checked;                     /* Administrative, to move only once */
 };
 
-struct  thing **warehouse;       /* The main board */
-int     height,                  /* Height of board */
-        width,                   /* Width of board */
-        ansi,                    /* ANSI terminal? */
-        ltrunc,                  /* Line length */
-        top;                     /* Screen height */
+struct thing **warehouse;               /* The main board */
+int     height,                         /* Height of board */
+        width,                          /* Width of board */
+        ansi,                           /* ANSI terminal? */
+        ltrunc,                         /* Line length */
+        top;                            /* Screen height */
 
 /* Grid maintenance functions */
 struct thing **buildWarehouse(int x, int y);
@@ -68,96 +68,98 @@ int moveThing(struct thing **new, struct thing **old, int x, int y);
 int priority(struct thing *object);
 
 int main(int argc, char *argv[]) {
-    int             cont = 1,
-                    display = 1,
-                    tempdisplay;
-    unsigned long   xsize = 80,
-                    ysize = 24,
-                    cycleno = 0,
-                    mincycle = 0,
-                    maxcycle;
-    char           *fname = NULL,
-                   *opts = NULL;
+    int     cont = 1,
+            display = 1,
+            tempdisplay;
+    unsigned long
+            xsize = 80,
+            ysize = 24,
+            cycleno = 0,
+            mincycle = 0,
+            maxcycle;
+    char   *fname = NULL,
+           *opts = NULL;
 
-    ansi = 1;                    /* Assume ANSI-compatible unless told otherwise. */
-    ltrunc = 0;                  /* Assume no line truncation */
-    top = 0;                     /* Assume no vertical truncation */
-    maxcycle = (unsigned)(-1);   /* Assume no termination */
+    ansi = 1;                           /* Assume ANSI-compatible unless told otherwise. */
+    ltrunc = 0;                         /* Assume no line truncation */
+    top = 0;                            /* Assume no vertical truncation */
+    maxcycle = (unsigned)(-1);          /* Assume no termination */
 
     /* Get the execution details from the command line */
     switch (argc) {
-    case 1:
-        fprintf(stderr, "%s:  No filename specified!\n", argv[0]);
-        return -1;
-    case 2:
-        fname = argv[1];
-        break;
-    case 3:
-        if (argv[1][0] == '-' || argv[1][0] == '/') {
-            opts = &argv[1][1];
-            fname = argv[2];
-        } else if (argv[2][0] == '-' || argv[2][0] == '/') {
-            opts = &argv[2][1];
+        case 1:
+            fprintf(stderr, "%s:  No filename specified!\n", argv[0]);
+            return -1;
+        case 2:
             fname = argv[1];
-        } else {
-            fprintf(stderr, "%s:  Invalid command sequence!\n", argv[0]);
-            return -2;
-        }
-        for (;*opts;++opts) {
-            switch (*opts) {
-            case 'a':        /* Not an ANSI terminal? */
-            case 'A':
-                ansi = 0;
-                break;
-            case 'b':        /* Delay animation? */
-            case 'B':
-                ++opts;
-                mincycle = atol(opts);
-                break;
-            case 'e':        /* End program early? */
-            case 'E':
-                ++opts;
-                maxcycle = atol(opts);
-                break;
-            case 'h':        /* Show top only? */
-            case 'H':
-                ++opts;
-                top = atol(opts);
-                break;
-            case 'q':        /* Quiet/No animation? */
-            case 'Q':
-                display = 0;
-                break;
-            case 't':        /* Change line length */
-            case 'T':
-                ++opts;
-                ltrunc = atol(opts);
-                break;
-            case 'x':        /* Change X size? */
-            case 'X':
-                ++opts;
-                xsize = atol(opts);
-                if (xsize < 2) {
-                    fprintf(stderr,
-                        "%s:  Warehouse must be at least 2x2 cells!\n",
-                        argv[0]);
-                }
-                break;
-            case 'y':        /* Change Y size? */
-            case 'Y':
-                ++opts;
-                ysize = atol(opts);
-                if (ysize < 2)
-                    fprintf(stderr,
-                        "%s:  Warehouse must be at least 2x2 cells!\n",
-                        argv[0]);
-                break;
+            break;
+        case 3:
+            if (argv[1][0] == '-' || argv[1][0] == '/') {
+                opts = &argv[1][1];
+                fname = argv[2];
+            } else if (argv[2][0] == '-' || argv[2][0] == '/') {
+                opts = &argv[2][1];
+                fname = argv[1];
+            } else {
+                fprintf(stderr, "%s:  Invalid command sequence!\n", argv[0]);
+                return -2;
             }
-        }
-        break;
-    default:
-        fprintf(stderr, "%s:  Too many parameters!\n", argv[0]);
-        return -3;
+            for (;*opts;++opts) {
+                switch (*opts) {
+                case 'a':               /* Not an ANSI terminal? */
+                case 'A':
+                    ansi = 0;
+                    break;
+                case 'b':               /* Delay animation? */
+                case 'B':
+                    ++opts;
+                    mincycle = atol(opts);
+                    break;
+                case 'e':               /* End program early? */
+                case 'E':
+                    ++opts;
+                    maxcycle = atol(opts);
+                    break;
+                case 'h':               /* Show top only? */
+                case 'H':
+                    ++opts;
+                    top = atol(opts);
+                    break;
+                case 'q':               /* Quiet/No animation? */
+                case 'Q':
+                    display = 0;
+                    break;
+                case 't':               /* Change line length */
+                case 'T':
+                    ++opts;
+                    ltrunc = atol(opts);
+                    break;
+                case 'x':               /* Change X size? */
+                case 'X':
+                    ++opts;
+                    xsize = atol(opts);
+                    if (xsize < 2) {
+                        fprintf(stderr,
+                            "%s:  Warehouse must be at least 2x2 cells!\n",
+                            argv[0]);
+                    }
+                    break;
+                case 'y':               /* Change Y size? */
+                case 'Y':
+                    ++opts;
+                    ysize = atol(opts);
+                    if (ysize < 2) {
+                        fprintf(stderr,
+                            "%s:  Warehouse must be at least 2x2 cells!\n",
+                            argv[0]);
+                    }
+                    break;
+                }
+            }
+            break;
+        default:
+            fprintf(stderr, "%s:  Too many parameters!\n", argv[0]);
+            return -3;
     }
 
     /* Allocate the "warehouse" space */
@@ -166,17 +168,20 @@ int main(int argc, char *argv[]) {
 
     /* Other initializations */
     tempdisplay = display;
-    if (mincycle && display)
+    if (mincycle && display) {
         display = 0;
+    }
 
     /* Fill the grid from the given file */
-    if (readFile(fname, warehouse))
+    if (readFile(fname, warehouse)) {
         exit(-4);
+    }
     fillWarehouse(warehouse, width, height);
 
     /* A second command-line argument shows the animation */
-    if (display)
+    if (display) {
         showGrid(warehouse, width, height);
+    }
     /* Allow the simulation to run, animating if necessary */
     while (cont) {
         cycle(&warehouse, width, height);
@@ -184,14 +189,16 @@ int main(int argc, char *argv[]) {
             sleep(1);
             showGrid(warehouse, width, height);
         }
-        if (cycleno > (unsigned)maxcycle)
+        if (cycleno >(unsigned)maxcycle) {
             cont = 0;
-        if (cycleno == mincycle)
+        }
+        if (cycleno == mincycle) {
             display = tempdisplay;
+        }
         ++cycleno;
     }
 
-    /* Should we ever exit the loop normally (which would happen if
+    /* Should we ever exit the loop normally(which would happen if
      * the value in cont would ever get changed), clean up the toys
      */
     condemnWarehouse(warehouse, width);
@@ -199,20 +206,22 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
+
 /*** Warehouse-maintainance Functions ***/
 
 struct thing **buildWarehouse(int x, int y) {
     /* Dyanamically allocate a grid of the specified size, plus
      * boundary regions.
      */
-    struct thing  **grid;
-    int             i, j;
+    struct thing   **grid;
+    int          i, j;
 
     width = x;
     height = y;
-    grid = (struct thing **)malloc(sizeof(struct thing *) * (width + 2));
-    for (i=0;i<width+2;i++)
-        grid[i] = (struct thing *)malloc(sizeof(struct thing) * (height + 2));
+    grid = (struct thing **) malloc(sizeof(struct thing *) *(width + 2));
+    for (i=0;i<width+2;i++) {
+        grid[i] = (struct thing *) malloc(sizeof(struct thing) *(height + 2));
+    }
     return grid;
 }
 
@@ -221,8 +230,9 @@ void condemnWarehouse(struct thing **warehouse, int x) {
     /* Deallocate the memory used for a particular grid. */
     int    i, j;
 
-    for (i=0;i<x+2;i++)
+    for (i=0;i<x+2;i++) {
         free(warehouse[i]);
+    }
     free(warehouse);
     return;
 }
@@ -248,13 +258,13 @@ void fillWarehouse(struct thing **warehouse, int x, int y) {
      * assigned to the cell.
      */
     struct thing   *cell;
-    int             i, j;
+    int         i, j;
 
     for (i=0;i<x;i++) {
         for (j=y-1;j>-1;j--) {
         /* Examining each cell... */
             cell = &warehouse[i][j];
-            cell->checked = 0;       /* No cell is checked to start */
+            cell->checked = 0;              /* No cell is checked to start */
             switch (cell->display) {
             case '=': case '/': case '\\': case '>':
             case '<': case 'W': case  'V': case 'A':
@@ -276,7 +286,7 @@ void fillWarehouse(struct thing **warehouse, int x, int y) {
                     fprintf(stderr,
                         "Warning:  Input will not function on this system\n");
                 }
-            #endif               /* not __MSDOS__ */
+            #endif                      /* not __MSDOS__ */
                 break;
                 /* Assign data to the "movers and shakers" */
             case '(':
@@ -312,7 +322,10 @@ void fillWarehouse(struct thing **warehouse, int x, int y) {
                 cell->type = MOV;
                 break;
             default:
-                fprintf(stderr, "Invalid character: %c\n", cell->display);
+                if (!isspace(cell->display)) {
+                    fprintf(stderr, "Invalid character: %c\n",
+                        cell->display);
+                }
                 break;
             }
             /* Each Object that moves really "pushes itself." */
@@ -360,7 +373,7 @@ int readFile(char *filename, struct thing **warehouse) {
     x = y = 1;
 
     /* Start reading, character by character */
-    while (!feof(infile) && (y < height + 2)) {
+    while (!feof(infile) &&(y < height + 2)) {
         fscanf(infile, "%c", &ch);
         /* Lines cannot be longer than the grid is wide */
         if (x > width) {
@@ -399,6 +412,7 @@ int readFile(char *filename, struct thing **warehouse) {
     return 0;
 }
 
+
 void showGrid(struct thing **warehouse, int x, int y) {
     /* Print the warehouse contents to the screen. */
     int    i, j;
@@ -430,14 +444,15 @@ void showGrid(struct thing **warehouse, int x, int y) {
     return;
 }
 
+
 /*** RUBE Activity Functions ***/
 
 int moveThing(struct thing **new, struct thing **old, int x, int y) {
     /* Relocate an object based on its direction and speed. */
     struct thing   *object;
-    int             dir, mot,
-                    i, j, itmp, jtmp,
-                    olddir, oldmot;
+    int         dir, mot,
+        i, j, itmp, jtmp,
+        olddir, oldmot;
 
     /* Set the starting point */
     i = x;
@@ -445,7 +460,7 @@ int moveThing(struct thing **new, struct thing **old, int x, int y) {
     object = &(old[x][y]);
 
     /* Quick optimization:  With gravity handled with the .freefall
-     * field (see below), spaces don't have to do anything, so we can
+     * field(see below), spaces don't have to do anything, so we can
      * ignore them.
      */
     if (object->display == ' ') {
@@ -490,18 +505,17 @@ int moveThing(struct thing **new, struct thing **old, int x, int y) {
      * reflecting object, then change the "dozer," rather than moving
      * it.  Change the direction, too.
      */
-    if ((new[i][j-1].display == ',') && (object->type == MOT) && (dir % 2 == 1)) {
+    if ((new[i][j-1].display == ',') &&(object->type == MOT) &&(dir % 2 == 1)) {
         dir = (dir==LEFT)?RIGHT:LEFT;
         object->display = (object->display=='(')?')':'(';
         i = x;
         j = y;
-    }
+    } else if ((dir % 2 == 1) && !(object->freefall) &&(new[i][j].display == ' ') &&
+   (new[i][j+1].display == ' ')) {
     /* An object that has become unsupported should enter freefall. */
-    else if ((dir % 2 == 1) && !(object->freefall) && (new[i][j].display == ' ') &&
-    (new[i][j+1].display == ' ')) {
         j += GRAV;
         object->freefall = 1;
-    } else if ((new[i][j].display == '/') && (dir == RIGHT) && (new[i][j-1].display == ' ')) {
+    } else if ((new[i][j].display == '/') &&(dir == RIGHT) &&(new[i][j-1].display == ' ')) {
     /* Objects colliding with ramps will be pushed upwards.  Technically,
      * it would be much nicer if ramps and similar ideas were handled
      * with an "OnCollision" function accessible through a function
@@ -509,14 +523,14 @@ int moveThing(struct thing **new, struct thing **old, int x, int y) {
      * usable parameter list that was still readable.
      */
         j -= 1;
-    } else if ((new[i][j].display == '\\') && (dir == LEFT) && (new[i][j-1].display == ' ')) {
+    } else if ((new[i][j].display == '\\') &&(dir == LEFT) &&(new[i][j-1].display == ' ')) {
         j -= 1;
     }
 
     /* Collisions are special cases which can only occur if any
      * movement is about to happen and the destination cell is full.
      */
-    if ((i != x || j != y) && (old[i][j].display != ' ')) {
+    if ((i != x || j != y) &&(old[i][j].display != ' ')) {
         /* If the object in the destination cell can still be moved */
         if (old[i][j].checked == 0) {
             /* Save the old heading */
@@ -528,8 +542,9 @@ int moveThing(struct thing **new, struct thing **old, int x, int y) {
             itmp = i;
             jtmp = j;
             /* Make sure we haven't already snuck through */
-            if (new[x][y].display == object->display)
+            if (new[x][y].display == object->display) {
                 new[x][y].display = ' ';
+            }
             /* Push the thing that's in the way */
             if (!moveThing(new, old, i, j)) {
                 /* If it failed, we can't move */
@@ -539,13 +554,13 @@ int moveThing(struct thing **new, struct thing **old, int x, int y) {
             /* Restore the heading to the object we just shoved */
             old[itmp][jtmp].pushed = oldmot;
             old[itmp][jtmp].direction = olddir;
+        } else {
+        /* If we're not allowed to move the object in the way, then
+         * we can't move, ourselves.
+         */
+            i = x;
+            j = y;
         }
-    } else {
-    /* If we're not allowed to move the object in the way, then
-     * we can't move, ourselves.
-     */
-        i = x;
-        j = y;
     }
 
     /* Transfer the data from the previous "frame" to the new. */
@@ -561,6 +576,7 @@ int moveThing(struct thing **new, struct thing **old, int x, int y) {
     }
     return 1;
 }
+
 
 int priority(struct thing *object) {
     /* Return the priority of a particular object.  Bigger numbers
@@ -578,21 +594,19 @@ int priority(struct thing *object) {
     if (object->type == STA) {
         pri = 5;
     } else if (object->type == MOT) {
-        /* Motive Objects are next, with vertical movement before the
-         * horizontal.
-         */
+    /* Motive Objects are next, with vertical movement before the
+     * horizontal.
+     */
         if (object->direction % 2 && !object->freefall) {
             pri = 3;
-        }
-        else {
+        } else {
             pri = 4;
         }
     } else if (object->type == MOV) {
     /* Finally, we have the Moveable Objects/Crates. */
         if (object->direction % 2 && !object->freefall) {
             pri = 1;
-        }
-        else {
+        } else {
             pri = 2;
         }
     } else {
@@ -605,9 +619,9 @@ int priority(struct thing *object) {
 
 void cycle(struct thing ***warehouse, int x, int y) {
     /* Move all the objects in the grid. */
-    struct thing  **temp,
-                   *object, *tempobj;
-    int             i, j, pri, tempval, tempval2;
+    struct thing   **temp,
+        *object, *tempobj;
+    int          i, j, pri, tempval, tempval2;
 
     /* Create a temporary grid in which we can place objects. */
     temp = buildWarehouse(x, y);
@@ -623,261 +637,261 @@ void cycle(struct thing ***warehouse, int x, int y) {
         for (i=1;i<x;i++) {
             object = &(*warehouse)[i][j];
             switch (object->display) {
-            /* Conveyor belts move the object immediately above
-             * one cell in the appropriate direction.
-             */
-            case '>':
-                tempobj = &((*warehouse)[i][j-1]);
-                if (tempobj->display != ' ') {
-                    tempobj->direction = RIGHT;
-                    tempobj->pushed = 1;
-                }
-                break;
-            case '<':
-                tempobj = &((*warehouse)[i][j-1]);
-                if (tempobj->display != ' ') {
-                    tempobj->direction = LEFT;
-                    tempobj->pushed = 1;
-                }
-                break;
-                /* Arithmetic operators, "packing" and "unpacking,"
-                 * take a crate on either side, and place the result
-                 * immediately underneath, assuming there is space.
-                 * Of course, it is a destructive calculation.
+                /* Conveyor belts move the object immediately above
+                 * one cell in the appropriate direction.
                  */
-            case '+':
-                /* Check the left digit. */
-                tempobj = &((*warehouse)[i-1][j]);
-                if (isxdigit(tempobj->display)) {
-                    /* Account for hex digits */
-                    if (isdigit(tempobj->display)) {
-                        tempval = tempobj->display - '0';
-                    } else {
-                        tempval = tempobj->display - 'a' + 10;
-                    }
-                    /* If successful so far, check the
-                     * right digit.
-                     */
-                    tempobj = &((*warehouse)[i+1][j]);
-                    if (isxdigit(tempobj->display)) {
-                        if (isdigit(tempobj->display)) {
-                            tempval += tempobj->display - '0';
-                        } else {
-                            tempval += tempobj->display - 'a' + 10;
-                        }
-                        tempobj->display = ' ';
-                        (*warehouse)[i-1][j].display = ' ';
-                        /* No overflow in RUBE--just
-                         * give the remainder.
-                         */
-                        tempval %= 16;
-                        tempobj = &((*warehouse)[i][j+1]);
-                        if (tempval < 10) {
-                            tempobj->display = tempval + '0';
-                        } else {
-                            tempobj->display = tempval - 10 + 'a';
-                        }
-                    }
-                }
-                break;
-            case '-':
-                tempobj = &((*warehouse)[i-1][j]);
-                if (isxdigit(tempobj->display)) {
-                    if (isdigit(tempobj->display)) {
-                        tempval = tempobj->display - '0';
-                    } else {
-                        tempval = tempobj->display - 'a' + 10;
-                    }
-                    tempobj = &((*warehouse)[i+1][j]);
-                    if (isxdigit(tempobj->display)) {
-                        if (isdigit(tempobj->display)) {
-                            tempval -= tempobj->display - '0';
-                        } else {
-                            tempval -= tempobj->display - 'a' + 10;
-                        }
-                        tempobj->display = ' ';
-                        (*warehouse)[i-1][j].display = ' ';
-                        tempval = (tempval + 16) % 16;
-                        tempobj = &((*warehouse)[i][j+1]);
-                        if (tempval < 10) {
-                            tempobj->display = tempval + '0';
-                        } else {
-                            tempobj->display = tempval - 10 + 'a';
-                        }
-                    }
-                }
-                break;
-                /* Replicators, above-to-below, and below-to-above. */
-            case ':':
-                tempobj = &((*warehouse)[i][j-1]);
-                if (tempobj->type == MOV && (*warehouse)[i][j+1].display == ' ') {
-                    memcpy(&((*warehouse)[i][j+1]), tempobj,
-                        sizeof(struct thing));
-                }
-                break;
-            case '.':
-                tempobj = &((*warehouse)[i][j+1]);
-                if (tempobj->type == MOV && (*warehouse)[i][j-1].display == ' ') {
-                    memcpy(&((*warehouse)[i][j-1]), tempobj,
-                        sizeof(struct thing));
-                }
-                break;
-                /* So-called winches and "swinches," each works like
-                 * a replicator, except that they move rather than
-                 * copy, and a swinch transforms to the other
-                 * direction each cycle.
-                 */
-            case 'V':
-                object->display = 'A';
-                /* No break; -- Fall through! to next case */
-            case 'W':
-                tempobj = &((*warehouse)[i][j-1]);
-                if (tempobj->type == MOV && (*warehouse)[i][j+1].display == ' ') {
-                    memcpy(&((*warehouse)[i][j+1]), tempobj,
-                        sizeof(struct thing));
-                    tempobj->display = ' ';
-                }
-                break;
-            case 'A':
-                object->display = 'V';
-                /* No break; -- Fall through! to next case */
-            case 'M':
-                tempobj = &((*warehouse)[i][j+1]);
-                if (tempobj->type == MOV && (*warehouse)[i][j-1].display == ' ') {
-                    memcpy(&((*warehouse)[i][j-1]), tempobj,
-                        sizeof(struct thing));
-                    tempobj->display = ' ';
-                }
-                break;
-                /* The Gate is the generic comparator.  The crate
-                 * above is compared with the crate below.  If the
-                 * first crate (the one above) is less, it is moved
-                 * to the left of the gate.  If greater, it is moved
-                 * to the right of the gate.  Otherwise, it is left
-                 * on top.
-                 */
-            case 'K':
-                tempobj = &((*warehouse)[i][j-1]);
-                if (tempobj->type == MOV) {
-                    if (isdigit(tempobj->display)) {
-                        tempval = tempobj->display - '0';
-                    } else {
-                        tempval = tempobj->display - 'a' + 10;
-                    }
-                    tempobj = &((*warehouse)[i][j+1]);
-                    if (isdigit(tempobj->display)) {
-                        tempval2 = tempobj->display - '0';
-                    } else {
-                        tempval2 = tempobj->display - 'a' + 10;
-                    }
+                case '>':
                     tempobj = &((*warehouse)[i][j-1]);
-                    if (tempval > tempval2 && (*warehouse)[i+1][j].display == ' ') {
-                        memcpy(&((*warehouse)[i+1][j]), tempobj,
+                    if (tempobj->display != ' ') {
+                        tempobj->direction = RIGHT;
+                        tempobj->pushed = 1;
+                    }
+                    break;
+                case '<':
+                    tempobj = &((*warehouse)[i][j-1]);
+                    if (tempobj->display != ' ') {
+                        tempobj->direction = LEFT;
+                        tempobj->pushed = 1;
+                    }
+                    break;
+                    /* Arithmetic operators, "packing" and "unpacking,"
+                     * take a crate on either side, and place the result
+                     * immediately underneath, assuming there is space.
+                     * Of course, it is a destructive calculation.
+                     */
+                case '+':
+                    /* Check the left digit. */
+                    tempobj = &((*warehouse)[i-1][j]);
+                    if (isxdigit(tempobj->display)) {
+                        /* Account for hex digits */
+                        if (isdigit(tempobj->display)) {
+                            tempval = tempobj->display - '0';
+                        } else {
+                            tempval = tempobj->display - 'a' + 10;
+                        }
+                        /* If successful so far, check the
+                         * right digit.
+                         */
+                        tempobj = &((*warehouse)[i+1][j]);
+                        if (isxdigit(tempobj->display)) {
+                            if (isdigit(tempobj->display)) {
+                                tempval += tempobj->display - '0';
+                            } else {
+                                tempval += tempobj->display - 'a' + 10;
+                            }
+                            tempobj->display = ' ';
+                           (*warehouse)[i-1][j].display = ' ';
+                            /* No overflow in RUBE--just
+                             * give the remainder.
+                             */
+                            tempval %= 16;
+                            tempobj = &((*warehouse)[i][j+1]);
+                            if (tempval < 10) {
+                                tempobj->display = tempval + '0';
+                            } else {
+                                tempobj->display = tempval - 10 + 'a';
+                            }
+                        }
+                    }
+                    break;
+                case '-':
+                    tempobj = &((*warehouse)[i-1][j]);
+                    if (isxdigit(tempobj->display)) {
+                        if (isdigit(tempobj->display)) {
+                            tempval = tempobj->display - '0';
+                        } else {
+                            tempval = tempobj->display - 'a' + 10;
+                        }
+                        tempobj = &((*warehouse)[i+1][j]);
+                        if (isxdigit(tempobj->display)) {
+                            if (isdigit(tempobj->display)) {
+                                tempval -= tempobj->display - '0';
+                            } else {
+                                tempval -= tempobj->display - 'a' + 10;
+                            }
+                            tempobj->display = ' ';
+                           (*warehouse)[i-1][j].display = ' ';
+                            tempval = (tempval + 16) % 16;
+                            tempobj = &((*warehouse)[i][j+1]);
+                            if (tempval < 10) {
+                                tempobj->display = tempval + '0';
+                            } else {
+                                tempobj->display = tempval - 10 + 'a';
+                            }
+                        }
+                    }
+                    break;
+                    /* Replicators, above-to-below, and below-to-above. */
+                case ':':
+                    tempobj = &((*warehouse)[i][j-1]);
+                    if (tempobj->type == MOV &&(*warehouse)[i][j+1].display == ' ') {
+                        memcpy(&((*warehouse)[i][j+1]), tempobj,
+                            sizeof(struct thing));
+                    }
+                    break;
+                case '.':
+                    tempobj = &((*warehouse)[i][j+1]);
+                    if (tempobj->type == MOV &&(*warehouse)[i][j-1].display == ' ') {
+                        memcpy(&((*warehouse)[i][j-1]), tempobj,
+                            sizeof(struct thing));
+                    }
+                    break;
+                    /* So-called winches and "swinches," each works like
+                     * a replicator, except that they move rather than
+                     * copy, and a swinch transforms to the other
+                     * direction each cycle.
+                     */
+                case 'V':
+                    object->display = 'A';
+                    /* No break; -- Fall through! to next case */
+                case 'W':
+                    tempobj = &((*warehouse)[i][j-1]);
+                    if (tempobj->type == MOV &&(*warehouse)[i][j+1].display == ' ') {
+                        memcpy(&((*warehouse)[i][j+1]), tempobj,
                             sizeof(struct thing));
                         tempobj->display = ' ';
                     }
-                    if (tempval < tempval2 && (*warehouse)[i-1][j].display == ' ') {
-                        memcpy(&((*warehouse)[i-1][j]), tempobj,
+                    break;
+                case 'A':
+                    object->display = 'V';
+                    /* No break; -- Fall through! to next case */
+                case 'M':
+                    tempobj = &((*warehouse)[i][j+1]);
+                    if (tempobj->type == MOV &&(*warehouse)[i][j-1].display == ' ') {
+                        memcpy(&((*warehouse)[i][j-1]), tempobj,
                             sizeof(struct thing));
                         tempobj->display = ' ';
                     }
-                }
-                break;
-                /* Numerical output prints the decimal value of the
-                 * crate that is above it.
-                 */
-            case 'N':
-                tempobj = &((*warehouse)[i][j-1]);
-                if (tempobj->type == MOV) {
-                    if (isdigit(tempobj->display)) {
-                        printf("%d", tempobj->display - '0');
-                    } else {
-                        printf("%d", tempobj->display - 'a' + 10);
-                    }
-                }
-                break;
-                /* Character output prints the character whose ASCII
-                 * value (in hex) are the crates to the left and
-                 * right of it.
-                 */
-            case 'C':
-                tempobj = &((*warehouse)[i-1][j]);
-                if (tempobj->type == MOV) {
-                    if (isdigit(tempobj->display)) {
-                        tempval = tempobj->display - '0';
-                    } else {
-                        tempval = tempobj->display - 'a' + 10;
-                    }
-                } else {
                     break;
-                }
-                tempobj = &((*warehouse)[i+1][j]);
-                if (tempobj->type == MOV) {
-                    if (isdigit(tempobj->display)) {
-                        tempval2 = tempobj->display - '0';
-                    } else {
-                        tempval2 = tempobj->display - 'a' + 10;
+                    /* The Gate is the generic comparator.  The crate
+                     * above is compared with the crate below.  If the
+                     * first crate(the one above) is less, it is moved
+                     * to the left of the gate.  If greater, it is moved
+                     * to the right of the gate.  Otherwise, it is left
+                     * on top.
+                     */
+                case 'K':
+                    tempobj = &((*warehouse)[i][j-1]);
+                    if (tempobj->type == MOV) {
+                        if (isdigit(tempobj->display)) {
+                            tempval = tempobj->display - '0';
+                        } else {
+                            tempval = tempobj->display - 'a' + 10;
+                        }
+                        tempobj = &((*warehouse)[i][j+1]);
+                        if (isdigit(tempobj->display)) {
+                            tempval2 = tempobj->display - '0';
+                        } else {
+                            tempval2 = tempobj->display - 'a' + 10;
+                        }
+                        tempobj = &((*warehouse)[i][j-1]);
+                        if (tempval > tempval2 &&(*warehouse)[i+1][j].display == ' ') {
+                            memcpy(&((*warehouse)[i+1][j]), tempobj,
+                                sizeof(struct thing));
+                            tempobj->display = ' ';
+                        }
+                        if (tempval < tempval2 &&(*warehouse)[i-1][j].display == ' ') {
+                            memcpy(&((*warehouse)[i-1][j]), tempobj,
+                                sizeof(struct thing));
+                            tempobj->display = ' ';
+                        }
                     }
-                } else {
                     break;
-                }
-                tempval = tempval * 16 + tempval2;
-                printf("%c", tempval);
-                (*warehouse)[i-1][j].display = ' ';
-                (*warehouse)[i+1][j].display = ' ';
-                break;
-                /* Character input, as written, will only work under
-                 * DOS-like systems, since that's the only place that
-                 * kbhit() is available.
-                 * Where it is available, each key pressed generates
-                 * nibbles to the left and right of the 'I', which
-                 * work are equivalent to those used in character
-                 * output.
-                 */
-            case 'I':
-            #ifdef __MSDOS__
-                if (kbhit()) {
-                    tempval = getch();
-                } else {
+                    /* Numerical output prints the decimal value of the
+                     * crate that is above it.
+                     */
+                case 'N':
+                    tempobj = &((*warehouse)[i][j-1]);
+                    if (tempobj->type == MOV) {
+                        if (isdigit(tempobj->display)) {
+                            printf("%d", tempobj->display - '0');
+                        } else {
+                            printf("%d", tempobj->display - 'a' + 10);
+                        }
+                    }
                     break;
-                }
-                tempval2 = tempval % 16;
-                tempval /= 16;
-                if (tempval < 10) {
-                    tempval += '0';
-                } else {
-                    tempval += 'a' - 10;
-                }
-                tempobj = &((*warehouse)[i-1][j]);
-                if (tempobj->display == ' ') {
-                    tempobj->display = tempval;
-                }
-                if (tempval2 < 10) {
-                    tempval2 += '0';
-                } else {
-                    tempval2 += 'a' - 10;
-                }
-                tempobj = &((*warehouse)[i+1][j]);
-                if (tempobj->display == ' ') {
-                    tempobj->display = tempval2;
-                }
-            #endif               /* __MSDOS__ -- 'I' */
-                break;
-                /* The furnace is the cleanup crew, destroying
-                 * everything surrounding it.
-                 */
-            case 'F':
-                (*warehouse)[i-1][j-1].display = ' ';
-                (*warehouse)[ i ][j-1].display = ' ';
-                (*warehouse)[i+1][j-1].display = ' ';
-                (*warehouse)[i-1][ j ].display = ' ';
-                (*warehouse)[i+1][ j ].display = ' ';
-                (*warehouse)[i-1][j+1].display = ' ';
-                (*warehouse)[ i ][j+1].display = ' ';
-                (*warehouse)[i+1][j+1].display = ' ';
-                break;
-            default:
-                break;
+                    /* Character output prints the character whose ASCII
+                     * value(in hex) are the crates to the left and
+                     * right of it.
+                     */
+                case 'C':
+                    tempobj = &((*warehouse)[i-1][j]);
+                    if (tempobj->type == MOV) {
+                        if (isdigit(tempobj->display)) {
+                            tempval = tempobj->display - '0';
+                        } else {
+                            tempval = tempobj->display - 'a' + 10;
+                        }
+                    } else {
+                        break;
+                    }
+                    tempobj = &((*warehouse)[i+1][j]);
+                    if (tempobj->type == MOV) {
+                        if (isdigit(tempobj->display)) {
+                            tempval2 = tempobj->display - '0';
+                        } else {
+                            tempval2 = tempobj->display - 'a' + 10;
+                        }
+                    } else {
+                        break;
+                    }
+                    tempval = tempval * 16 + tempval2;
+                    printf("%c", tempval);
+                   (*warehouse)[i-1][j].display = ' ';
+                   (*warehouse)[i+1][j].display = ' ';
+                    break;
+                    /* Character input, as written, will only work under
+                     * DOS-like systems, since that's the only place that
+                     * kbhit() is available.
+                     * Where it is available, each key pressed generates
+                     * nibbles to the left and right of the 'I', which
+                     * work are equivalent to those used in character
+                     * output.
+                     */
+                case 'I':
+                #ifdef __MSDOS__
+                    if (kbhit()) {
+                        tempval = getch();
+                    } else {
+                        break;
+                    }
+                    tempval2 = tempval % 16;
+                    tempval /= 16;
+                    if (tempval < 10) {
+                        tempval += '0';
+                    } else {
+                        tempval += 'a' - 10;
+                    }
+                    tempobj = &((*warehouse)[i-1][j]);
+                    if (tempobj->display == ' ') {
+                        tempobj->display = tempval;
+                    }
+                    if (tempval2 < 10) {
+                        tempval2 += '0';
+                    } else {
+                        tempval2 += 'a' - 10;
+                    }
+                    tempobj = &((*warehouse)[i+1][j]);
+                    if (tempobj->display == ' ') {
+                        tempobj->display = tempval2;
+                    }
+                #endif                      /* __MSDOS__ -- 'I' */
+                    break;
+                    /* The furnace is the cleanup crew, destroying
+                     * everything surrounding it.
+                     */
+                case 'F':
+                   (*warehouse)[i-1][j-1].display = ' ';
+                   (*warehouse)[ i ][j-1].display = ' ';
+                   (*warehouse)[i+1][j-1].display = ' ';
+                   (*warehouse)[i-1][ j ].display = ' ';
+                   (*warehouse)[i+1][ j ].display = ' ';
+                   (*warehouse)[i-1][j+1].display = ' ';
+                   (*warehouse)[ i ][j+1].display = ' ';
+                   (*warehouse)[i+1][j+1].display = ' ';
+                    break;
+                default:
+                    break;
             }
         }
     }
@@ -889,7 +903,7 @@ void cycle(struct thing ***warehouse, int x, int y) {
         for (j=1;j<y;j++) {
             for (i=1;i<x;i++) {
                 if ((priority(&(*warehouse)[i][j]) == pri) &&
-                    ((*warehouse)[i][j].checked == 0)) {
+                        ((*warehouse)[i][j].checked == 0)) {
                     moveThing(temp, *warehouse, i, j);
                 }
             }
@@ -903,4 +917,3 @@ void cycle(struct thing ***warehouse, int x, int y) {
     *warehouse = temp;
     return;
 }
-
