@@ -20,6 +20,13 @@
 #endif                                  /* __MSDOS__ */
 #include "klik.h"
 
+struct thing **warehouse;               /* The main board */
+int     height,                         /* Height of board */
+        width,                          /* Width of board */
+        ansi,                           /* ANSI terminal? */
+        ltrunc,                         /* Line length */
+        top;                            /* Screen height */
+
 int main(int argc, char *argv[]) {
     int     cont = 1,
             display = 1,

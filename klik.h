@@ -27,13 +27,6 @@ struct  thing {
     int    checked;                     /* Administrative, to move only once */
 };
 
-struct thing **warehouse;               /* The main board */
-int     height,                         /* Height of board */
-        width,                          /* Width of board */
-        ansi,                           /* ANSI terminal? */
-        ltrunc,                         /* Line length */
-        top;                            /* Screen height */
-
 /* Grid maintenance functions */
 struct thing **buildWarehouse(int x, int y);
 void condemnWarehouse(struct thing **warehouse, int x);
