@@ -14,11 +14,11 @@
 #include <malloc.h>
 #include <string.h>
 #ifdef __MSDOS__
-#include <conio.h>
 #include <mem.h>
 #include <dos.h>
 #endif                                  /* __MSDOS__ */
 #include "klik.h"
+#include "io.h"
 
 struct thing **warehouse;               /* The main board */
 int     height,                         /* Height of board */
@@ -26,14 +26,15 @@ int     height,                         /* Height of board */
         ansi,                           /* ANSI terminal? */
         ltrunc,                         /* Line length */
         top;                            /* Screen height */
+enum modes mode = NONE;
 
 int main(int argc, char *argv[]) {
     int     cont = 1,
             display = 1,
             tempdisplay;
     unsigned long
-            xsize = 80,
-            ysize = 24,
+            xsize = 0,
+            ysize = 0,
             cycleno = 0,
             mincycle = 0,
             maxcycle;
@@ -69,6 +70,7 @@ int main(int argc, char *argv[]) {
                 case 'a':               /* Not an ANSI terminal? */
                 case 'A':
                     ansi = 0;
+                    mode = FLAT;
                     break;
                 case 'b':               /* Delay animation? */
                 case 'B':
@@ -122,6 +124,10 @@ int main(int argc, char *argv[]) {
             return -3;
     }
 
+    /* Set up screen information */
+    mode = guess_screen_mode(mode);
+    initialize_screen(mode, &xsize, &ysize);
+
     /* Allocate the "warehouse" space */
     warehouse = buildWarehouse(xsize, ysize);
     initializeWarehouse(warehouse, width, height);
@@ -163,6 +169,7 @@ int main(int argc, char *argv[]) {
      */
     condemnWarehouse(warehouse, width);
     warehouse = NULL;
+    close_window(mode);
     return 0;
 }
 
@@ -236,9 +243,9 @@ void fillWarehouse(struct thing **warehouse, int x, int y) {
                 cell->motivation = 0;
                 cell->type = STA;
                 cell->freefall = 0;
-            #ifndef __MSDOS__
-                /* In non-DOS systems, 'I' isn't
-                 * going to work.  We should still
+                #if !defined(__MSDOS__) && !defined(USE_CURSES)
+                /* In non-DOS, non-curses systems, 'I'
+                 * isn't going to work.  We should still
                  * accept it in the program, though,
                  * for portability.
                  */
@@ -246,7 +253,7 @@ void fillWarehouse(struct thing **warehouse, int x, int y) {
                     fprintf(stderr,
                         "Warning:  Input will not function on this system\n");
                 }
-            #endif                      /* not __MSDOS__ */
+                #endif                  /* not __MSDOS__ or USE_CURSES */
                 break;
                 /* Assign data to the "movers and shakers" */
             case '(':
@@ -377,12 +384,8 @@ void showGrid(struct thing **warehouse, int x, int y) {
     /* Print the warehouse contents to the screen. */
     int    i, j;
 
-    /* ANSI code to clear the screen */
-    if (ansi) {
-        printf("%c[22;1H", 27);
-    } else {
-        printf("\n");
-    }
+    /* Clear the screen */
+    clear_screen(mode);
 
     /* If horizontal/vertical size is limited, change it here */
     if (ltrunc && ltrunc < x) {
@@ -398,12 +401,13 @@ void showGrid(struct thing **warehouse, int x, int y) {
             printf("\n");
         }
         for (i=1;i<=x;i++) {
-            printf("%c", warehouse[i][j].display);
+            show_character(mode, warehouse, i, j);
         }
         if (ltrunc != 0 && x >= ltrunc) {
             printf("\n");
         }
     }
+    dump_output(mode, '\000');
     return;
 }
 
@@ -584,7 +588,7 @@ void cycle(struct thing ***warehouse, int x, int y) {
     /* Move all the objects in the grid. */
     struct thing   **temp,
         *object, *tempobj;
-    int          i, j, pri, tempval, tempval2;
+    int          i, j, pri, tempval, tempval2, value;
 
     /* Create a temporary grid in which we can place objects. */
     temp = buildWarehouse(x, y);
@@ -767,10 +771,11 @@ void cycle(struct thing ***warehouse, int x, int y) {
                     tempobj = &((*warehouse)[i][j-1]);
                     if (tempobj->type == MOV) {
                         if (isdigit(tempobj->display)) {
-                            printf("%d", tempobj->display - '0');
+                            value = tempobj->display - '0';
                         } else {
-                            printf("%d", tempobj->display - 'a' + 10);
+                            value = tempobj->display - 'a' + 10;
                         }
+                        dump_number(mode, value);
                     }
                     break;
                     /* Character output prints the character whose ASCII
@@ -799,9 +804,9 @@ void cycle(struct thing ***warehouse, int x, int y) {
                         break;
                     }
                     tempval = tempval * 16 + tempval2;
-                    printf("%c", tempval);
-                   (*warehouse)[i-1][j].display = ' ';
-                   (*warehouse)[i+1][j].display = ' ';
+                    dump_output(mode, tempval);
+                    (*warehouse)[i-1][j].display = ' ';
+                    (*warehouse)[i+1][j].display = ' ';
                     break;
                     /* Character input, as written, will only work under
                      * DOS-like systems, since that's the only place that
@@ -812,7 +817,6 @@ void cycle(struct thing ***warehouse, int x, int y) {
                      * output.
                      */
                 case 'I':
-                #ifdef __MSDOS__
                     if (kbhit()) {
                         tempval = getch();
                     } else {
@@ -838,7 +842,6 @@ void cycle(struct thing ***warehouse, int x, int y) {
                     if (tempobj->display == ' ') {
                         tempobj->display = tempval2;
                     }
-                #endif                      /* __MSDOS__ -- 'I' */
                     break;
                     /* The furnace is the cleanup crew, destroying
                      * everything surrounding it.
