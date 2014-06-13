@@ -8,24 +8,25 @@ command line.
     klik <options> <sourcefile>
     klik <sourcefile> <options>
 
-...where options are a single "word," prefaced by a dash ('`-`') or a slash ('`/`'), and are made up of any ordering of the following.
+...where options are a single "word," prefaced by a dash ('`-`'), and are made up of any ordering of the following.
 
-| **Option** | **Example** | **Description**                               |
-| ---------- |:-----------:| --------------------------------------------- |
-| `a`        | `a`         | No ANSI signals to clear screen               |
-| `b`<num>   | `b150`      | Begin animation at specified frame number     |
-| `e`<num>   | `e400`      | End program after specified frame number      |
-| `h`<num>   | `h12`       | Display no more than the first lines          |
-| `q`        | `q`         | "Quiet Mode"--does not show animation         |
-| `t`<num>   | `t78`       | Truncate display lines to a particular width  |
-| `x`<num>   | `x25`       | Sets the width (x-dimension) of the warehouse |
-| `y`<num>   | `y10`       | Sets the depth (y-dimension) of the warehouse |
+| **Option**    | **Long Option **           | **Example**            | **Description**                                 |
+| ------------- |:--------------------------:|:----------------------:| ----------------------------------------------- |
+| `-a`          | `--no_ansi`                | `-a`                   | No ANSI signals to clear screen                 |
+| `-b` _<num>_  | `--begin_at` _<num>_       | `-b 150`               | Begin animation at specified frame number       |
+| `-e` _<num>_  | `--end_at` _<num>_         | `-e 400`               | End program after specified frame number        |
+| `-f` _<file>_ | `--filename` _<file>_      | `-f examples/echo.rub` | Program file; explicit `-f` option not required |
+| `-h` _<num>_  | `--display-height` _<num>_ | `-h 12`                | Display no more than the first lines            |
+| `-q`          | `--quiet`                  | `-q`                   | "Quiet Mode"--does not show animation           |
+| `-t` _<num>_  | `--truncate-width` _<num>_ | `-t 78`                | Truncate display lines to a particular width    |
+| `-x` _<num>_  | `--width` _<num>_          | `-x 25`                | Sets the width (x-dimension) of the warehouse   |
+| `-y` _<num>_  | `--height` _<num>_         | `-y 10`                | Sets the depth (y-dimension) of the warehouse   |
 
 Options can appear in any order.
 
 So, as an example, we can have something like...
 
-    klik -h24t80x500y750 hugeprog.rub
+    klik -h24 -t80 -x500 -y750 hugeprog.rub
 
 ...which will run the RUBE II program in a warehouse measuring 500 by 750 cells, but only display the upper-left screenful.
 

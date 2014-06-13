@@ -10,7 +10,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
+#include <getopt.h>
 #include <malloc.h>
 #include <string.h>
 #ifdef __MSDOS__
@@ -31,15 +33,30 @@ enum modes mode = NONE;
 int main(int argc, char *argv[]) {
     int     cont = 1,
             display = 1,
-            tempdisplay;
+            tempdisplay,
+            option_index = 0;
     unsigned long
             xsize = 0,
             ysize = 0,
             cycleno = 0,
             mincycle = 0,
             maxcycle;
-    char   *fname = NULL,
-           *opts = NULL;
+    char    fname[256] = "\000",
+           *opts = NULL,
+            optc = 0;
+
+    static struct option long_options[] = {
+        { "no-ansi",        no_argument,       NULL, 'a' },
+        { "begin-at",       required_argument, NULL, 'b' },
+        { "end-at",         required_argument, NULL, 'e' },
+        { "file",           required_argument, NULL, 'f' },
+        { "display-height", required_argument, NULL, 'h' },
+        { "quiet",          no_argument,       NULL, 'q' },
+        { "truncate-width", required_argument, NULL, 't' },
+        { "width",          required_argument, NULL, 'x' },
+        { "height",         required_argument, NULL, 'y' },
+        { NULL,             0,                 NULL, 0 }
+    };
 
     ansi = 1;                           /* Assume ANSI-compatible unless told otherwise. */
     ltrunc = 0;                         /* Assume no line truncation */
@@ -47,81 +64,58 @@ int main(int argc, char *argv[]) {
     maxcycle = (unsigned)(-1);          /* Assume no termination */
 
     /* Get the execution details from the command line */
-    switch (argc) {
-        case 1:
-            fprintf(stderr, "%s:  No filename specified!\n", argv[0]);
-            return -1;
-        case 2:
-            fname = argv[1];
+    while (optc != -1) {
+        optc = getopt_long(argc, argv, "ab:e:f:h:qt:x:y:",
+                long_options, &option_index);
+        switch (optc) {
+        case 'a':               /* Not an ANSI terminal? */
+            ansi = 0;
+            mode = FLAT;
             break;
-        case 3:
-            if (argv[1][0] == '-' || argv[1][0] == '/') {
-                opts = &argv[1][1];
-                fname = argv[2];
-            } else if (argv[2][0] == '-' || argv[2][0] == '/') {
-                opts = &argv[2][1];
-                fname = argv[1];
-            } else {
-                fprintf(stderr, "%s:  Invalid command sequence!\n", argv[0]);
-                return -2;
-            }
-            for (;*opts;++opts) {
-                switch (*opts) {
-                case 'a':               /* Not an ANSI terminal? */
-                case 'A':
-                    ansi = 0;
-                    mode = FLAT;
-                    break;
-                case 'b':               /* Delay animation? */
-                case 'B':
-                    ++opts;
-                    mincycle = atol(opts);
-                    break;
-                case 'e':               /* End program early? */
-                case 'E':
-                    ++opts;
-                    maxcycle = atol(opts);
-                    break;
-                case 'h':               /* Show top only? */
-                case 'H':
-                    ++opts;
-                    top = atol(opts);
-                    break;
-                case 'q':               /* Quiet/No animation? */
-                case 'Q':
-                    display = 0;
-                    break;
-                case 't':               /* Change line length */
-                case 'T':
-                    ++opts;
-                    ltrunc = atol(opts);
-                    break;
-                case 'x':               /* Change X size? */
-                case 'X':
-                    ++opts;
-                    xsize = atol(opts);
-                    if (xsize < 2) {
-                        fprintf(stderr,
-                            "%s:  Warehouse must be at least 2x2 cells!\n",
-                            argv[0]);
-                    }
-                    break;
-                case 'y':               /* Change Y size? */
-                case 'Y':
-                    ++opts;
-                    ysize = atol(opts);
-                    if (ysize < 2) {
-                        fprintf(stderr,
-                            "%s:  Warehouse must be at least 2x2 cells!\n",
-                            argv[0]);
-                    }
-                    break;
-                }
+        case 'b':               /* Delay animation? */
+            mincycle = atol(optarg);
+            break;
+        case 'e':               /* End program early? */
+            maxcycle = atol(optarg);
+            break;
+        case 'f':
+            strcpy(fname, optarg);
+            break;
+        case 'h':               /* Show top only? */
+            top = atol(optarg);
+            break;
+        case 'q':               /* Quiet/No animation? */
+            display = 0;
+            mode = FLAT;
+            break;
+        case 't':               /* Change line length */
+            ltrunc = atol(optarg);
+            break;
+        case 'x':               /* Change X size? */
+            xsize = atol(optarg);
+            if (xsize < 2) {
+                fprintf(stderr,
+                    "%s:  Warehouse must be at least 2x2 cells!\n",
+                    argv[0]);
             }
             break;
-        default:
-            fprintf(stderr, "%s:  Too many parameters!\n", argv[0]);
-            return -3;
+        case 'y':               /* Change Y size? */
+            ysize = atol(optarg);
+            if (ysize < 2) {
+                fprintf(stderr,
+                    "%s:  Warehouse must be at least 2x2 cells!\n",
+                    argv[0]);
+            }
+            break;
+        }
+    }
+
+    if (strlen(fname) == 0 && optind < argc) {
+        strcpy(fname, argv[optind]);
+    }
+    if (strlen(fname) == 0) {
+        fprintf(stderr, "%s:  No filename specified!\n", argv[0]);
+        return -1;
     }
 
     /* Set up screen information */
