@@ -116,12 +116,14 @@ int input_character(enum modes type) {
     } else {
         /* No support */
     }
+
+    if (value < 1) {
+        /* Possibly of interest */
+    }
 }
 
 void dump_output(enum modes type, char c) {
     /* Add character to the list or print the buffer to the screen */
-    int width, height, index;
-
     if (c) {
         output_buffer[buffer_end] = c;
         ++ buffer_end;
@@ -135,6 +137,8 @@ void dump_output(enum modes type, char c) {
 #endif
 #ifdef USE_CURSES
     } else if (type == CURSES) {
+        int width, height, index;
+
         getmaxyx(stdscr, height, width);
         for (index=0;index<buffer_end;index++) {
             move(height - 1, index);

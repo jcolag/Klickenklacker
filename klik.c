@@ -42,7 +42,6 @@ int main(int argc, char *argv[]) {
             mincycle = 0,
             maxcycle;
     char    fname[256] = "\000",
-           *opts = NULL,
             optc = 0;
 
     static struct option long_options[] = {
@@ -106,6 +105,8 @@ int main(int argc, char *argv[]) {
                     "%s:  Warehouse must be at least 2x2 cells!\n",
                     argv[0]);
             }
+            break;
+        default:
             break;
         }
     }
@@ -175,7 +176,7 @@ struct thing **buildWarehouse(int x, int y) {
      * boundary regions.
      */
     struct thing   **grid;
-    int          i, j;
+    int              i;
 
     width = x;
     height = y;
@@ -189,7 +190,7 @@ struct thing **buildWarehouse(int x, int y) {
 
 void condemnWarehouse(struct thing **warehouse, int x) {
     /* Deallocate the memory used for a particular grid. */
-    int    i, j;
+    int    i;
 
     for (i=0;i<x+2;i++) {
         free(warehouse[i]);
@@ -370,6 +371,8 @@ int readFile(char *filename, struct thing **warehouse) {
         } while (!feof(infile));
         fprintf(stderr, "Warning:  %d lines truncated from file.\n", count);
     }
+
+    fclose(infile);
     return 0;
 }
 
@@ -411,9 +414,8 @@ void showGrid(struct thing **warehouse, int x, int y) {
 int moveThing(struct thing **new, struct thing **old, int x, int y) {
     /* Relocate an object based on its direction and speed. */
     struct thing   *object;
-    int         dir, mot,
-        i, j, itmp, jtmp,
-        olddir, oldmot;
+    int             dir, mot,
+                    i, j;
 
     /* Set the starting point */
     i = x;
@@ -466,12 +468,12 @@ int moveThing(struct thing **new, struct thing **old, int x, int y) {
      * reflecting object, then change the "dozer," rather than moving
      * it.  Change the direction, too.
      */
-    if ((new[i][j-1].display == ',') &&(object->type == MOT) &&(dir % 2 == 1)) {
+    if ((new[i][j-1].display == ',') && (object->type == MOT) && (dir % 2 != 0)) {
         dir = (dir==LEFT)?RIGHT:LEFT;
         object->display = (object->display=='(')?')':'(';
         i = x;
         j = y;
-    } else if ((dir % 2 == 1) && !(object->freefall) &&(new[i][j].display == ' ') &&
+    } else if ((dir % 2 != 0) && !(object->freefall) &&(new[i][j].display == ' ') &&
    (new[i][j+1].display == ' ')) {
     /* An object that has become unsupported should enter freefall. */
         j += GRAV;
@@ -494,6 +496,8 @@ int moveThing(struct thing **new, struct thing **old, int x, int y) {
     if ((i != x || j != y) &&(old[i][j].display != ' ')) {
         /* If the object in the destination cell can still be moved */
         if (old[i][j].checked == 0) {
+            int itmp, jtmp, olddir, oldmot;
+
             /* Save the old heading */
             olddir = old[i][j].direction;
             oldmot = old[i][j].pushed;
@@ -530,10 +534,10 @@ int moveThing(struct thing **new, struct thing **old, int x, int y) {
     if (i == x && j == y) {
         return 0;
     }
-    if (object->type != MOT) {
-        object->checked = 1;
-    } else {
+    if (object->type == MOT) {
         object->checked = 0;
+    } else {
+        object->checked = 1;
     }
     return 1;
 }
