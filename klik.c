@@ -601,6 +601,7 @@ void cycle(struct thing ***warehouse, int x, int y) {
     for (j=1;j<y;j++) {
         for (i=1;i<x;i++) {
             object = &(*warehouse)[i][j];
+            ++ object->idle;
             switch (object->display) {
                 /* Conveyor belts move the object immediately above
                  * one cell in the appropriate direction.

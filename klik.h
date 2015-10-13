@@ -25,6 +25,7 @@ struct  thing {
     int    direction;                   /* Current direction of motion */
     int    freefall;                    /* Does gravity apply? */
     int    checked;                     /* Administrative, to move only once */
+    long   idle;                        /* Ticks immobile */
 };
 
 /* Grid maintenance functions */
