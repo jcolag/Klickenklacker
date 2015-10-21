@@ -227,6 +227,7 @@ void fillWarehouse(struct thing **warehouse, int x, int y) {
         /* Examining each cell... */
             cell = &warehouse[i][j];
             cell->checked = 0;              /* No cell is checked to start */
+            cell->idle += 1;                /* Assume it'll stay */
             switch (cell->display) {
             case '=': case '/': case '\\': case '>':
             case '<': case 'W': case  'V': case 'A':
@@ -533,6 +534,9 @@ int moveThing(struct thing **new, struct thing **old, int x, int y) {
     /* Only return a 1 if we moved */
     if (i == x && j == y) {
         return 0;
+    } else {
+        /* The object has moved */
+        object->idle = 0;
     }
     if (object->type == MOT) {
         object->checked = 0;

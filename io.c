@@ -76,6 +76,7 @@ void clear_screen(enum modes type) {
 
 void show_character(enum modes type, struct thing **screen, int xpos, int ypos) {
     char next = screen[xpos][ypos].display;
+    int  idle = screen[xpos][ypos].idle;
 
     if (type == NONE) {
         /* Do nothing */;
