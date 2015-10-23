@@ -11,6 +11,7 @@
 
 char output_buffer[2048];
 int  buffer_end = 0;
+int  use_color = 0;
 
 enum modes guess_screen_mode(enum modes type) {
     if (type != NONE) {
@@ -95,9 +96,11 @@ void show_character(enum modes type, struct thing **screen, int xpos, int ypos) 
     } else if (type == CURSES) {
         move(ypos - 1, xpos - 1);
         addch(next);
-        attron(COLOR_PAIR(color));
-        if (isspace(next)) {
-            attroff(COLOR_PAIR(color));
+        if (use_color) {
+            attron(COLOR_PAIR(color));
+            if (isspace(next)) {
+                attroff(COLOR_PAIR(color));
+            }
         }
         refresh();
 #endif

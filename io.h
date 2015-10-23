@@ -8,6 +8,8 @@ enum modes {
     NONE            /* Never use NONE */
 };
 
+extern int use_color;
+
 enum modes guess_screen_mode(enum modes);
 void initialize_screen(enum modes, unsigned long *, unsigned long *);
 void clear_screen(enum modes);
