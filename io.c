@@ -41,6 +41,16 @@ void initialize_screen(enum modes type, unsigned long *width, unsigned long *hei
 #ifdef USE_CURSES
     } else if (type == CURSES) {
         initscr();
+        if (has_colors() == TRUE) {
+            start_color();
+            init_pair(1, COLOR_WHITE,   COLOR_BLACK);
+            init_pair(2, COLOR_CYAN,    COLOR_BLACK);
+            init_pair(3, COLOR_BLUE,    COLOR_BLACK);
+            init_pair(4, COLOR_GREEN,   COLOR_BLACK);
+            init_pair(5, COLOR_YELLOW,  COLOR_BLACK);
+            init_pair(6, COLOR_RED,     COLOR_BLACK);
+            init_pair(7, COLOR_MAGENTA, COLOR_BLACK);
+        }
         cbreak();
         noecho();
         getmaxyx(stdscr, *height, *width);
@@ -76,7 +86,8 @@ void clear_screen(enum modes type) {
 
 void show_character(enum modes type, struct thing **screen, int xpos, int ypos) {
     char next = screen[xpos][ypos].display;
-    int  idle = screen[xpos][ypos].idle;
+    int  idle = screen[xpos][ypos].idle,
+         color = idle > 5 ? 3 : 1;
 
     if (type == NONE) {
         /* Do nothing */;
@@ -84,6 +95,10 @@ void show_character(enum modes type, struct thing **screen, int xpos, int ypos) 
     } else if (type == CURSES) {
         move(ypos - 1, xpos - 1);
         addch(next);
+        attron(COLOR_PAIR(color));
+        if (isspace(next)) {
+            attroff(COLOR_PAIR(color));
+        }
         refresh();
 #endif
     } else {
