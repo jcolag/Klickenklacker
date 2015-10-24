@@ -47,6 +47,7 @@ int main(int argc, char *argv[]) {
     static struct option long_options[] = {
         { "no-ansi",        no_argument,       NULL, 'a' },
         { "begin-at",       required_argument, NULL, 'b' },
+        { "color",          no_argument,       NULL, 'c' },
         { "end-at",         required_argument, NULL, 'e' },
         { "file",           required_argument, NULL, 'f' },
         { "display-height", required_argument, NULL, 'h' },
@@ -73,6 +74,9 @@ int main(int argc, char *argv[]) {
             break;
         case 'b':               /* Delay animation? */
             mincycle = atol(optarg);
+            break;
+        case 'c':               /* Use NCurses color */
+            use_color = 1;
             break;
         case 'e':               /* End program early? */
             maxcycle = atol(optarg);
